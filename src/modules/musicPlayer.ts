@@ -7,14 +7,15 @@ import sodium from 'sodium-native';
 import { messageManager } from '../utils/messageManager';
 import * as YoutubeSearchApi from 'youtube-search-api';
 import { isValidHttpUrl } from '../utils/urlValidator';
+import { SongInfo } from '../types';
 
 const ytDlp = youtubeDl.create('yt-dlp');
 
 class MusicPlayer {
   private connection: VoiceConnection | null = null;
   private audioPlayer = createAudioPlayer();
-  private queue: string[] = [];
-  private currentTrack: string | null = null;
+  private queue: SongInfo[] = [];
+  private currentTrack: SongInfo | null = null;
   private textChannel: TextChannel | null = null;
 
   constructor() {
@@ -23,12 +24,16 @@ class MusicPlayer {
     }
   }
 
-  private async searchSong(query: string): Promise<string | null> {
+  private async searchSong(query: string): Promise<SongInfo | null> {
     try {
       const searchResults = await YoutubeSearchApi.GetListByKeyword(query, false, 1);
       if (searchResults.items && searchResults.items.length > 0) {
         const videoId = searchResults.items[0].id;
-        return `https://www.youtube.com/watch?v=${videoId}`;
+        const videoName = searchResults.items[0].title;
+        return { 
+            url: `https://www.youtube.com/watch?v=${videoId}`,
+            title: videoName
+        };
       } else {
         return null;
       }
@@ -40,7 +45,7 @@ class MusicPlayer {
 
   async join(message: Message): Promise<void> {
     if (!message.member?.voice.channel) {
-      await messageManager.send(message, 'notInVoiceChannel');
+      await messageManager.reply(message, 'notInVoiceChannel');
       return;
     }
 
@@ -58,30 +63,31 @@ class MusicPlayer {
 
   async play(message: Message, query: string): Promise<void> {
     if (!this.connection) {
-      await messageManager.send(message, 'notInVoiceChannel')
+      await messageManager.reply(message, 'notInVoiceChannel')
       return;
     }
 
-    let url: string;
+    let songInfo: SongInfo;
     if (isValidHttpUrl(query)) {
-      url = query;
+        songInfo = { title: 'Unknown Title', url: query };
     } else {
-      const searchResult = await this.searchSong(query);
-      if (searchResult) {
-        url = searchResult;
-        await this.textChannel?.send(`Found song: ${url}`);
-      } else {
-        await messageManager.send(message, 'songNotFound');
-        return;
-      }
+        const searchResult = await this.searchSong(query);
+        if (searchResult) {
+          songInfo = searchResult;
+          await messageManager.send(message, `Found song: ${songInfo.title}`);
+        } else {
+          await messageManager.reply(message, 'songNotFound');
+          return;
+        }
     }
 
-    this.queue.push(url);
+    this.queue.push(songInfo);
 
     if (!this.currentTrack) {
       this.processQueue();
     } else {
-        await messageManager.send(message, 'addedToQueue');
+        const position = this.queue.length;
+        await messageManager.send(message, `Added to queue at position ${position}: ${songInfo.title}`)
     }
   }
 
@@ -93,7 +99,7 @@ class MusicPlayer {
 
     this.currentTrack = this.queue.shift()!;
     try {
-      const output = await ytDlp(this.currentTrack, {
+      const output = await ytDlp(this.currentTrack.url, {
         dumpSingleJson: true,
         skipDownload: true,
         youtubeSkipDashManifest: true,
@@ -112,7 +118,7 @@ class MusicPlayer {
         '--no-check-certificate',
         '-o', '-',
         '-f', bestAudioFormat.format_id,
-        this.currentTrack
+        this.currentTrack.url
       ]);
 
       const stream = Readable.from(process.stdout);
@@ -124,10 +130,10 @@ class MusicPlayer {
         this.processQueue();
       });
 
-      await this.textChannel?.send(`Now playing: ${output.title}`);
+      await this.textChannel?.send(`Now playing: ${this.currentTrack.title}`);
     } catch (error) {
       console.error('Error playing track:', error);
-      await this.textChannel?.send('An error occurred while trying to play the track. Skipping to the next one.');
+      await this.textChannel?.send(`An error occurred while trying to play ${this.currentTrack.title}. Skipping to the next one.`);
       this.processQueue();
     }
   }
@@ -142,6 +148,13 @@ class MusicPlayer {
     this.audioPlayer.stop();
     this.currentTrack = null;
     await this.textChannel?.send('Stopped playback and cleared the queue.');
+  }
+
+  getQueue(): { current: SongInfo | null, upcoming: SongInfo[] } {
+    return { 
+        current: this.currentTrack,
+        upcoming: [...this.queue]
+    }
   }
 
 }

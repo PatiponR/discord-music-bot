@@ -10,3 +10,8 @@ export interface Config {
   prefix: string;
   environment: string;
 }
+
+export interface SongInfo {
+  title: string;
+  url: string;
+}

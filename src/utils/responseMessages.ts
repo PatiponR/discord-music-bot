@@ -8,5 +8,6 @@ export const ResponseMessages = {
     notInVoiceChannel: "I'm not in a voice channel!",
     songNotFound: "Couldn't find a song matching your query.",
     addedToQueue: "Song added to the queue!",
-    // Add more messages as needed
+    queueEmpty: "The queue is currently empty.",
+
 };

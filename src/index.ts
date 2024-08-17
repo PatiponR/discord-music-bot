@@ -7,6 +7,8 @@ import defaultConfig from './config/default';
 import uatConfig from './config/uat';
 import productionConfig from './config/production';
 
+//this project requires ffmpeg and yt-dlp to be installed in your machine to make it work
+
 dotenv.config({ path: `.env.${process.env.NODE_ENV}` });
 console.log(generateDependencyReport());
 console.log(`Running in ${process.env.NODE_ENV} environment`);
