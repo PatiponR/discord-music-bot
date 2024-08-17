@@ -1,5 +1,5 @@
 import { Command } from '../types';
-import { musicPlayer } from '../modules/musicPlayer';
+import { musicPlayer } from '../modules/MusicPlayer';
 
 const stop: Command = {
   name: 'stop',
