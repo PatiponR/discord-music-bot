@@ -1,25 +1,20 @@
 {
   "name": "discord-music-bot",
   "version": "1.0.0",
-  "description": "A Discord music bot",
-  "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "start:uat": "NODE_ENV=uat node --loader ts-node/esm src/index.ts",
-    "start:prod": "NODE_ENV=production node dist/index.js",
+    "start:uat": "cross-env NODE_ENV=uat node --loader ts-node/esm src/index.ts",
+    "start:prod": "cross-env NODE_ENV=production node dist/index.js",
     "build": "tsc",
-    "dev": "NODE_ENV=uat nodemon --exec node --loader ts-node/esm src/index.ts",
-    "test": "echo \"No tests specified\" && exit 0"
+    "dev": "cross-env NODE_ENV=uat nodemon --exec node --loader ts-node/esm src/index.ts"
   },
-  "keywords": ["discord", "bot", "music"],
-  "author": "Your Name",
-  "license": "ISC",
   "dependencies": {
     "discord.js": "^14.9.0",
     "dotenv": "^16.0.3"
   },
   "devDependencies": {
     "@types/node": "^18.15.11",
+    "cross-env": "^7.0.3",
     "nodemon": "^2.0.22",
     "ts-node": "^10.9.1",
     "typescript": "^5.0.4"
