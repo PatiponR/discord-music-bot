@@ -138,9 +138,54 @@ class MusicPlayer {
     }
   }
 
-  async skip(): Promise<void> {
+  async pause(message: Message): Promise<void> {
+    if (!this.connection || !this.currentTrack) {
+      await messageManager.reply(message, 'nothingPlaying');
+      return;
+    }
+
+    if (this.audioPlayer.state.status === AudioPlayerStatus.Paused) {
+      await messageManager.reply(message, 'alreadyPaused');
+      return;
+    }
+
+    this.audioPlayer.pause();
+    await messageManager.send(message, `Paused: ${this.currentTrack.title}`);
+  }
+
+  async resume(message: Message): Promise<void> {
+    if (!this.connection || !this.currentTrack) {
+      await messageManager.reply(message, 'nothingPlaying');
+      return;
+    }
+
+    if (this.audioPlayer.state.status === AudioPlayerStatus.Playing) {
+      await messageManager.reply(message, 'alreadyPlaying');
+      return;
+    }
+
+    this.audioPlayer.unpause();
+    await messageManager.send(message, `Resumed: ${this.currentTrack.title}`);
+  }
+
+
+  async skip(message: Message): Promise<void> {
+    if (!this.connection || !this.currentTrack) {
+      await messageManager.reply(message, 'nothingPlaying');
+      return;
+    }
+  
+    const skippedTrack = this.currentTrack;
+  
     this.audioPlayer.stop();
-    await this.textChannel?.send('Skipped the current track.');
+    await messageManager.send(message, `Skipped: ${skippedTrack.title}`);
+  
+    if (this.queue.length > 0) {
+      this.processQueue();
+    } else {
+      this.currentTrack = null;
+      await messageManager.send(message, 'queueEmpty');
+    }
   }
 
   async stop(): Promise<void> {

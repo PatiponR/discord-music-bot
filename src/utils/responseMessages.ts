@@ -9,5 +9,10 @@ export const ResponseMessages = {
     songNotFound: "Couldn't find a song matching your query.",
     addedToQueue: "Song added to the queue!",
     queueEmpty: "The queue is currently empty.",
-
+    errorSkipping: "An error occurred while trying to skip the song.",
+    nothingPlaying: "There's nothing currently playing.",
+    alreadyPaused: "The music is already paused.",
+    alreadyPlaying: "The music is already playing.",
+    errorPausing: "An error occurred while trying to pause the music.",
+    errorResuming: "An error occurred while trying to resume the music.",
 };
