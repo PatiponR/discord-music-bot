@@ -1,19 +1,29 @@
 import dotenv from 'dotenv';
-import { createClient } from './client.js';
-import { loadCommands } from './utils/loadCommands.js';
-import { loadEvents } from './utils/loadEvents.js';
-import defaultConfig from './config/default.js';
-import uatConfig from './config/uat.js';
-import productionConfig from './config/production.js';
+import { Client, GatewayIntentBits } from 'discord.js';
+import { loadCommands } from './utils/loadCommands';
+import { loadEvents } from './utils/loadEvents';
 
 dotenv.config({ path: `.env.${process.env.NODE_ENV}` });
 
-const config = process.env.NODE_ENV === 'production'
-  ? { ...defaultConfig, ...productionConfig }
-  : { ...defaultConfig, ...uatConfig };
+console.log(`Running in ${process.env.NODE_ENV} environment`);
 
-const client = createClient(config);
-loadCommands().then(commands => {
-  loadEvents(client, commands, config);
-  client.login(process.env.DISCORD_TOKEN);
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildVoiceStates,
+  ],
 });
+
+async function main() {
+  try {
+    const commands = await loadCommands();
+    loadEvents(client, commands);
+    await client.login(process.env.DISCORD_TOKEN);
+  } catch (error) {
+    console.error('Error in main function:', error);
+  }
+}
+
+main().catch(console.error);

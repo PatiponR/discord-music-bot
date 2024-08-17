@@ -1,21 +1,27 @@
 {
   "name": "discord-music-bot",
   "version": "1.0.0",
-  "type": "module",
   "scripts": {
-    "start:uat": "cross-env NODE_ENV=uat node --loader ts-node/esm src/index.ts",
+    "start": "node dist/index.js",
+    "start:uat": "cross-env NODE_ENV=uat node dist/index.js",
     "start:prod": "cross-env NODE_ENV=production node dist/index.js",
+    "dev": "cross-env NODE_ENV=development ts-node src/index.ts",
+    "dev:uat": "cross-env NODE_ENV=uat ts-node src/index.ts",
     "build": "tsc",
-    "dev": "cross-env NODE_ENV=uat nodemon --exec node --loader ts-node/esm src/index.ts"
+    "build:uat": "tsc",
+    "build:prod": "tsc"
   },
   "dependencies": {
-    "discord.js": "^14.9.0",
-    "dotenv": "^16.0.3"
+    "@discordjs/voice": "^0.16.0",
+    "discord.js": "^14.11.0",
+    "dotenv": "^16.0.3",
+    "ffmpeg-static": "^5.2.0",
+    "youtube-search-api": "^1.2.0",
+    "ytdl-core": "^4.11.4"
   },
   "devDependencies": {
-    "@types/node": "^18.15.11",
+    "@types/node": "^18.16.3",
     "cross-env": "^7.0.3",
-    "nodemon": "^2.0.22",
     "ts-node": "^10.9.1",
     "typescript": "^5.0.4"
   }
