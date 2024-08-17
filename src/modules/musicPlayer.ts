@@ -1,6 +1,11 @@
 import { VoiceConnection, joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus } from '@discordjs/voice';
-import ytdl from 'ytdl-core';
 import { Message, TextChannel } from 'discord.js';
+import youtubeDl from 'youtube-dl-exec';
+import { spawn } from 'child_process';
+import { Readable } from 'stream';
+import sodium from 'sodium-native';
+
+const ytDlp = youtubeDl.create('yt-dlp');
 
 class MusicPlayer {
   private connection: VoiceConnection | null = null;
@@ -9,20 +14,31 @@ class MusicPlayer {
   private currentTrack: string | null = null;
   private textChannel: TextChannel | null = null;
 
+  constructor() {
+    if (!sodium) {
+      console.error('Failed to load sodium');
+    }
+  }
+
   async join(message: Message): Promise<void> {
     if (!message.member?.voice.channel) {
       await message.reply('You need to be in a voice channel to use this command!');
       return;
     }
-5
+
     this.connection = joinVoiceChannel({
       channelId: message.member.voice.channel.id,
       guildId: message.guild!.id,
       adapterCreator: message.guild!.voiceAdapterCreator,
+      selfDeaf: false,
+      selfMute: false
     });
 
     this.textChannel = message.channel as TextChannel;
     this.connection.subscribe(this.audioPlayer);
+
+    await message.guild!.members.me!.voice.setDeaf(false);
+    await message.guild!.members.me!.voice.setMute(false);
 
     await message.reply('Joined the voice channel!');
   }
@@ -47,16 +63,44 @@ class MusicPlayer {
     }
 
     this.currentTrack = this.queue.shift()!;
-    const stream = ytdl(this.currentTrack, { filter: 'audioonly' });
-    const resource = createAudioResource(stream);
+    try {
+      const output = await ytDlp(this.currentTrack, {
+        dumpSingleJson: true,
+        skipDownload: true,
+        youtubeSkipDashManifest: true,
+        preferFreeFormats: true,
+        noCheckCertificates: true,
+      });
 
-    this.audioPlayer.play(resource);
+      const audioFormats = output.formats.filter((format: any) => format.acodec !== 'none' && format.vcodec === 'none');
+      const bestAudioFormat = audioFormats.sort((a: any, b: any) => b.abr - a.abr)[0];
 
-    this.audioPlayer.on(AudioPlayerStatus.Idle, () => {
+      if (!bestAudioFormat) {
+        throw new Error('No suitable audio format found');
+      }
+
+      const process = spawn('yt-dlp', [
+        '--no-check-certificate',
+        '-o', '-',
+        '-f', bestAudioFormat.format_id,
+        this.currentTrack
+      ]);
+
+      const stream = Readable.from(process.stdout);
+      const resource = createAudioResource(stream);
+
+      this.audioPlayer.play(resource);
+
+      this.audioPlayer.on(AudioPlayerStatus.Idle, () => {
+        this.processQueue();
+      });
+
+      await this.textChannel?.send(`Now playing: ${output.title}`);
+    } catch (error) {
+      console.error('Error playing track:', error);
+      await this.textChannel?.send('An error occurred while trying to play the track. Skipping to the next one.');
       this.processQueue();
-    });
-
-    await this.textChannel?.send(`Now playing: ${this.currentTrack}`);
+    }
   }
 
   async skip(): Promise<void> {

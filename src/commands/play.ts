@@ -1,7 +1,5 @@
 import { Command } from '../types';
 import { musicPlayer } from '../modules/musicPlayer';
-import { searchYoutube } from 'youtube-search-api';
-import ytdl from 'ytdl-core';
 
 const play: Command = {
   name: 'play',
@@ -12,20 +10,9 @@ const play: Command = {
       return;
     }
 
-    let query = args.join(' ');
+    const query = args.join(' ');
     
     try {
-      if (!ytdl.validateURL(query)) {
-        const searchResults = await searchYoutube(query);
-        if (searchResults.items.length > 0) {
-          const videoId = searchResults.items[0].id;
-          query = `https://www.youtube.com/watch?v=${videoId}`;
-        } else {
-          await message.reply('No results found for your query.');
-          return;
-        }
-      }
-
       await musicPlayer.join(message);
       await musicPlayer.play(query);
     } catch (error) {
