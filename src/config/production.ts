@@ -1,4 +1,4 @@
-import defaultConfig from './default.js';
+import defaultConfig from './default';
 
 export default {
   ...defaultConfig,

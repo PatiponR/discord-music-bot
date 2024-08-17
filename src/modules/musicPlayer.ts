@@ -4,6 +4,9 @@ import youtubeDl from 'youtube-dl-exec';
 import { spawn } from 'child_process';
 import { Readable } from 'stream';
 import sodium from 'sodium-native';
+import { messageManager } from '../utils/messageManager';
+import * as YoutubeSearchApi from 'youtube-search-api';
+import { isValidHttpUrl } from '../utils/urlValidator';
 
 const ytDlp = youtubeDl.create('yt-dlp');
 
@@ -20,9 +23,24 @@ class MusicPlayer {
     }
   }
 
+  private async searchSong(query: string): Promise<string | null> {
+    try {
+      const searchResults = await YoutubeSearchApi.GetListByKeyword(query, false, 1);
+      if (searchResults.items && searchResults.items.length > 0) {
+        const videoId = searchResults.items[0].id;
+        return `https://www.youtube.com/watch?v=${videoId}`;
+      } else {
+        return null;
+      }
+    } catch (error) {
+      console.error('Error searching for song:', error);
+      return null;
+    }
+  }
+
   async join(message: Message): Promise<void> {
     if (!message.member?.voice.channel) {
-      await message.reply('You need to be in a voice channel to use this command!');
+      await messageManager.send(message, 'notInVoiceChannel');
       return;
     }
 
@@ -30,29 +48,40 @@ class MusicPlayer {
       channelId: message.member.voice.channel.id,
       guildId: message.guild!.id,
       adapterCreator: message.guild!.voiceAdapterCreator,
-      selfDeaf: false,
-      selfMute: false
+      selfDeaf: true,
     });
 
     this.textChannel = message.channel as TextChannel;
     this.connection.subscribe(this.audioPlayer);
 
-    await message.guild!.members.me!.voice.setDeaf(false);
-    await message.guild!.members.me!.voice.setMute(false);
-
-    await message.reply('Joined the voice channel!');
   }
 
-  async play(url: string): Promise<void> {
+  async play(message: Message, query: string): Promise<void> {
     if (!this.connection) {
-      await this.textChannel?.send('I\'m not in a voice channel!');
+      await messageManager.send(message, 'notInVoiceChannel')
       return;
+    }
+
+    let url: string;
+    if (isValidHttpUrl(query)) {
+      url = query;
+    } else {
+      const searchResult = await this.searchSong(query);
+      if (searchResult) {
+        url = searchResult;
+        await this.textChannel?.send(`Found song: ${url}`);
+      } else {
+        await messageManager.send(message, 'songNotFound');
+        return;
+      }
     }
 
     this.queue.push(url);
 
     if (!this.currentTrack) {
       this.processQueue();
+    } else {
+        await messageManager.send(message, 'addedToQueue');
     }
   }
 
@@ -114,6 +143,7 @@ class MusicPlayer {
     this.currentTrack = null;
     await this.textChannel?.send('Stopped playback and cleared the queue.');
   }
+
 }
 
 export const musicPlayer = new MusicPlayer();

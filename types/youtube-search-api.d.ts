@@ -17,16 +17,32 @@ declare module 'youtube-search-api' {
 
   export interface SearchResponse {
     items: SearchResult[];
-    nextPageToken: string;
+    nextPage: {
+      nextPageToken: string;
+      nextPageContext: any;
+    };
     estimatedResults: number;
+    continuation: boolean;
+    refinements: string[];
   }
 
-  export function searchYoutube(
-    query: string,
+  export function GetListByKeyword(
+    keyword: string,
+    withDetail?: boolean,
+    limit?: number,
     options?: {
-      maxResults?: number;
-      regionCode?: string;
-      type?: 'video' | 'channel' | 'playlist';
+      gl?: string;
+      hl?: string;
     }
   ): Promise<SearchResponse>;
+
+  export function GetSuggestData(keyword: string): Promise<string[]>;
+
+  export function GetPlaylistData(
+    playlistId: string,
+    withDetail?: boolean,
+    limit?: number
+  ): Promise<SearchResponse>;
+
+  export function GetVideoDetails(videoId: string): Promise<SearchResult>;
 }

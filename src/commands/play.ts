@@ -1,12 +1,13 @@
 import { Command } from '../types';
 import { musicPlayer } from '../modules/MusicPlayer';
+import { messageManager } from '../utils/messageManager';
 
 const play: Command = {
   name: 'play',
   description: 'Play a song from YouTube',
   execute: async (client, message, args) => {
     if (!args.length) {
-      await message.reply('Please provide a song name or YouTube URL!');
+      await messageManager.reply(message, 'provideSongOrUrl');
       return;
     }
 
@@ -14,10 +15,9 @@ const play: Command = {
     
     try {
       await musicPlayer.join(message);
-      await musicPlayer.play(query);
+      await musicPlayer.play(message, query);
     } catch (error) {
-      console.error('Error in play command:', error);
-      await message.reply('An error occurred while trying to play the song.');
+      await messageManager.reply(message, 'errorPlayingSong');
     }
   },
 };

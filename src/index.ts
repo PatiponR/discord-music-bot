@@ -3,8 +3,9 @@ import { Client, GatewayIntentBits } from 'discord.js';
 import { loadCommands } from './utils/loadCommands';
 import { loadEvents } from './utils/loadEvents';
 import { generateDependencyReport } from '@discordjs/voice';
-import uatConfig from './config/uat'
-import productionConfig from './config/production'
+import defaultConfig from './config/default';
+import uatConfig from './config/uat';
+import productionConfig from './config/production';
 
 dotenv.config({ path: `.env.${process.env.NODE_ENV}` });
 console.log(generateDependencyReport());
@@ -12,8 +13,8 @@ console.log(`Running in ${process.env.NODE_ENV} environment`);
 
 // Choose environment-specific configuration
 const config = process.env.NODE_ENV === 'production'
-  ? productionConfig
-  : uatConfig;
+  ? { ...defaultConfig, ...productionConfig }
+  : { ...defaultConfig, ...uatConfig };
 
 const client = new Client({
   intents: [

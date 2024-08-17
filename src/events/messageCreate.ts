@@ -1,5 +1,7 @@
 import { Message, Client } from 'discord.js';
 import { Command, Config } from '../types/index.js';
+import { messageManager } from '../utils/messageManager';
+
 
 export const messageCreate = (client: Client, commands: Map<string, Command>, config: Config) => {
   return async (message: Message): Promise<void> => {
@@ -14,7 +16,7 @@ export const messageCreate = (client: Client, commands: Map<string, Command>, co
     const command = commands.get(commandName);
 
     if (!command) {
-      await message.reply('Unknown command. Type !help for a list of commands.');
+      await messageManager.send(message, 'unknownCommand');
       return;
     }
 
@@ -22,7 +24,7 @@ export const messageCreate = (client: Client, commands: Map<string, Command>, co
       await command.execute(client, message, args);
     } catch (error) {
       console.error(error);
-      await message.reply('There was an error trying to execute that command!');
+      await messageManager.send(message,'errorExecutingCommand');
     }
   };
 };

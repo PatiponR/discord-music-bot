@@ -8,8 +8,5 @@ export function loadEvents(client: Client, commands: Map<string, Command>, confi
     console.log(`Logged in as ${client.user?.tag}!`);
   });
 
-  client.on('messageCreate', async (message) => {
-        const handler = messageCreate(client, commands, config)
-        await handler(message)
-  });
+  client.on('messageCreate', messageCreate(client, commands, config));
 }
